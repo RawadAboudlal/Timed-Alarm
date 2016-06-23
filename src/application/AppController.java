@@ -2,6 +2,8 @@ package application;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioInputStream;
@@ -9,7 +11,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,6 +25,8 @@ public class AppController {
 	private static final String DEFAULT_SLEEP_TIME = "10:00";
 	
 	private static final ArrayList<String> SOUND_FILE_EXTENSIONS = new ArrayList<String>();
+	
+	private static final long SLEEP_TIME = TimeUnit.SECONDS.toMillis(1);
 	
 	@FXML private Label countdownTimer;
 	@FXML private TextField textFieldAlarmTime;
@@ -58,59 +61,38 @@ public class AppController {
 	@FXML
 	public void initialize() {
 		
-		Thread countdownThread = new Thread(new Task<Integer>() {
-			
+		Timer countdown = new Timer("Countdown Thread", true);
+		countdown.scheduleAtFixedRate(new TimerTask() {
 			@Override
-			public Integer call() throws Exception {
+			public void run() {
 				
-				long prevTime = System.currentTimeMillis();
+				long passedTime = SLEEP_TIME;
 				
-				boolean running = true;
-				
-				while(running) {
+				if(requestedSleepTime > 0) {
 					
-					long currentTime = System.currentTimeMillis();
-					long passedTime = currentTime - prevTime;
+					if(passedTime <= currentSleptTime) {
+						currentSleptTime -= passedTime;
+					} else {
+						currentSleptTime = 0;
+					}
 					
-					prevTime = currentTime;
+					final long finalSleptTime = currentSleptTime;
 					
-					if(requestedSleepTime > 0) {
+					Platform.runLater(() -> {
+						countdownTimer.setText(textFormatter.getValueConverter().toString(finalSleptTime));
+					});
+					
+					if(currentSleptTime <= 0) {
+						currentSleptTime = requestedSleepTime;
 						
-						if(passedTime <= currentSleptTime) {
-							currentSleptTime -= passedTime;
-						} else {
-							currentSleptTime = 0;
-						}
-						
-						final long finalSleptTime = currentSleptTime;
-						
-						Platform.runLater(() -> {
-							countdownTimer.setText(textFormatter.getValueConverter().toString(finalSleptTime));
-						});
-						
-						if(currentSleptTime <= 0) {
-							currentSleptTime = requestedSleepTime;
-							
-							setPlaySoundRequested(true);
-							
-						}
-						
-						try {
-							Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-						} catch (Exception ex) {
-							ex.printStackTrace();
-						}
+						setPlaySoundRequested(true);
 						
 					}
 					
 				}
-				
-				return 0;
-				
+					
 			}
-		}, "Countdown Thread");
-		countdownThread.setDaemon(true);
-		countdownThread.start();
+		}, 0, SLEEP_TIME);
 		
 		Thread soundThread = new Thread(() -> {
 			while(true) {
