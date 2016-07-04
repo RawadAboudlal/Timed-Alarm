@@ -1,7 +1,6 @@
 package application;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +23,9 @@ public class AppController {
 	
 	private static final String DEFAULT_SLEEP_TIME = "10:00";
 	
-	private static final ArrayList<String> SOUND_FILE_EXTENSIONS = new ArrayList<String>();
+	private static final String[] SOUND_FILE_EXTENSIONS = {
+			"*.wav"
+	};
 	
 	private static final long SLEEP_TIME = TimeUnit.SECONDS.toMillis(1);
 	
@@ -50,12 +51,6 @@ public class AppController {
 	public AppController() {
 		setLoadSoundRequested(false);
 		setPlaySoundRequested(false);
-	}
-	
-	static {
-		SOUND_FILE_EXTENSIONS.add("*.wav");
-		SOUND_FILE_EXTENSIONS.add(".wav");
-		SOUND_FILE_EXTENSIONS.add("wav");
 	}
 	
 	@FXML
@@ -187,7 +182,7 @@ public class AppController {
 		countdownTimer.setText(DEFAULT_SLEEP_TIME);
 		
 		fileChooser = new FileChooser();
-		fileChooser.setSelectedExtensionFilter(new ExtensionFilter("Sound File", SOUND_FILE_EXTENSIONS));
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Sound File", SOUND_FILE_EXTENSIONS));
 		
 		soundFile = new File("res/defaultSound.wav");
 		labelSoundFile.setText(this.soundFile.getName());
